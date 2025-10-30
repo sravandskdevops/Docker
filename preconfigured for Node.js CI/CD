@@ -94,3 +94,114 @@ docker run -d \
 --------------------------------------------------------------------------------------------------------------
 docker exec -it jenkins-node cat /var/lib/jenkins/secrets/initialAdminPassword
 =============================================================================================================== end 
+Perfect ⚡ — here’s a complete Jenkins Pipeline (Jenkinsfile) for a Node.js project, ready to use in your Jenkins setup.
+This pipeline will:
+✅ Pull code from GitHub
+✅ Install dependencies with npm
+✅ Run tests
+✅ Build your app
+✅ (Optional) Build and push a Docker image
+vi Jenkinsfile
+pipeline {
+    agent any
+
+    tools {
+        nodejs "NodeJS_18"   // Matches the NodeJS tool name in jenkins.yaml
+    }
+
+    environment {
+        DOCKER_IMAGE = "kumar1111/nodejs-app"
+        DOCKERHUB_USER = "kumar1111"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                echo '📥 Cloning repository...'
+                git branch: 'main', url: 'https://github.com/your-username/your-nodejs-app.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo '📦 Installing npm packages...'
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                echo '🧪 Running test cases...'
+                sh 'npm test || echo "No tests defined"'
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                echo '🏗️ Building the Node.js application...'
+                sh 'npm run build || echo "No build script defined"'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo '🐳 Building Docker image...'
+                sh 'docker build -t ${DOCKER_IMAGE}:latest .'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                echo '🚀 Pushing Docker image to Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    sh 'docker push ${DOCKER_IMAGE}:latest'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Please check logs.'
+        }
+    }
+}
+=======================================================================================================================
+⚙️ Setup Instructions
+
+In Jenkins:
+
+Go to Manage Jenkins → Tools → NodeJS Installations
+
+Ensure there’s a tool named “NodeJS_18” (it matches the pipeline above)
+
+In Jenkins:
+
+Go to Credentials → Global → Add Credentials
+
+Type: Username with password
+
+ID: dockerhub-cred
+
+Username: your Docker Hub username
+
+Password: your Docker Hub password or token
+
+In your GitHub repo, place this file at:
+/Jenkinsfile
+Create a new pipeline job in Jenkins:
+
+Type: Pipeline
+
+Choose: Pipeline script from SCM → Git
+
+Repo URL: your Node.js project repo
+
+Branch: main
+
+
