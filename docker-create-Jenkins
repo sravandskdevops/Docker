@@ -1,0 +1,37 @@
+vi Dockerfile 
+# Start from the official Jenkins LTS image
+FROM jenkins/jenkins:lts
+
+# Switch to root user to install additional packages
+USER root
+
+# (Optional) Install extra tools — Git, Docker CLI, etc.
+RUN apt-get update && \
+    apt-get install -y sudo curl git vim docker.io && \
+    rm -rf /var/lib/apt/lists/*
+
+# Give Jenkins user access to Docker (if Docker socket is mounted)
+RUN usermod -aG docker jenkins
+
+# Switch back to Jenkins user
+USER jenkins
+
+# Expose ports: 8080 (Web UI) and 50000 (Agent connections)
+EXPOSE 8080 50000
+
+# Jenkins runs automatically from the base image
+------------------------------------------------------------------------
+# Build your custom Jenkins image
+docker build -t myjenkins:latest .
+
+# Run Jenkins container
+docker run -d \
+  -p 8080:8080 -p 50000:50000 \
+  --name jenkins \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  myjenkins:latest
+  ---------------------------------------------------------
+  http://<your-ec2-public-ip>:8080  # here give host port 8080
+  docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+------------------------------------------------------------------------------------- end created jenkins -----------------------------------------
