@@ -1,0 +1,96 @@
+Perfect ⚡ — you want Jenkins preconfigured for Node.js CI/CD (so you can automatically build & test Node apps).
+
+Here’s the complete setup 👇
+✅ Jenkins + Docker + Maven + Node.js
+✅ Node.js CI/CD ready (with npm & pipeline support)
+✅ Preinstalled Jenkins plugins for Node builds
+Dockerfile: Jenkins with Node.js CI/CD Setup
+vi Dockerfile 
+# ---------------------------
+# Base: Ubuntu + Java + Jenkins
+# ---------------------------
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install base tools
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jdk wget curl git gnupg sudo ca-certificates lsb-release unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------
+# Install Jenkins
+# ---------------------------
+RUN wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | apt-key add - && \
+    sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list' && \
+    apt-get update && \
+    apt-get install -y jenkins && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------
+# Install Docker CLI
+# ---------------------------
+RUN apt-get update && \
+    apt-get install -y docker.io && \
+    usermod -aG docker jenkins && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------
+# Install Node.js (LTS) + npm + yarn
+# ---------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------
+# Install Jenkins Plugins (Node + Pipeline + Git + Docker)
+# ---------------------------
+RUN jenkins-plugin-cli --plugins \
+    "git:latest \
+     workflow-aggregator:latest \
+     docker-workflow:latest \
+     blueocean:latest \
+     credentials-binding:latest \
+     nodejs:latest"
+
+# ---------------------------
+# Setup Jenkins Node.js Tool Configuration
+# ---------------------------
+# Preconfigure Jenkins to use global Node.js installation
+COPY jenkins.yaml /usr/share/jenkins/ref/jenkins.yaml
+
+ENV CASC_JENKINS_CONFIG=/usr/share/jenkins/ref/jenkins.yaml
+
+# ---------------------------
+# Expose Ports
+# ---------------------------
+EXPOSE 8080 50000
+
+# Start Jenkins
+CMD ["java", "-jar", "/usr/share/jenkins/jenkins.war"]
+---------------------------------------------------------------------------------------------------------
+### jenkins.yaml (auto-configures Node.js tool inside Jenkins)
+=====================================================================
+vi jenkins.yaml
+jenkins:
+  systemMessage: "Jenkins Node.js CI/CD Server"
+  tool:
+    nodejs:
+      installations:
+        - name: "NodeJS_18"
+          home: "/usr/bin"
+-------------------------------------------------------------------------------------------------------
+# Build Jenkins with Node.js
+docker build -t myjenkins:nodejs .
+
+# Run container
+docker run -d \
+  -p 8080:8080 -p 50000:50000 \
+  --name jenkins-node \
+  -v jenkins_home:/var/lib/jenkins \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  myjenkins:nodejs
+--------------------------------------------------------------------------------------------------------------
+docker exec -it jenkins-node cat /var/lib/jenkins/secrets/initialAdminPassword
+=============================================================================================================== end 
