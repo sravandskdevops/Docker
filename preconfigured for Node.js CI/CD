@@ -203,5 +203,44 @@ Choose: Pipeline script from SCM → Git
 Repo URL: your Node.js project repo
 
 Branch: main
+==================================================
+nodejs-app/
+│
+├── Dockerfile
+├── Jenkinsfile          ← (from previous step)
+├── package.json
+├── server.js
+└── README.md
+==================================================
+vi server.js
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('🚀 Hello from Node.js App — Deployed via Jenkins CI/CD!');
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
+====================================================================
+vi package.json
+{
+  "name": "nodejs-jenkins-demo",
+  "version": "1.0.0",
+  "description": "Simple Node.js app for Jenkins CI/CD demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"No tests defined\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+=====================================================================
+vi Dockerfile
+
 
 
